@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Vaccine Supply Calculator</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; font-size: 1rem; line-height: 1.5; }
+    .container { max-width: 600px; margin: auto; }
+    h1, h2 { font-size: 1.5rem; text-align: center; }
+    .input-group { margin-bottom: 15px; }
+    .input-group label { display: block; margin-bottom: 5px; font-size: 1rem; }
+    .input-group input, .input-group select { width: 100%; padding: 10px; box-sizing: border-box; font-size: 1rem; }
+    button { width: 100%; padding: 15px; background-color: #4CAF50; color: #fff; border: none; font-size: 1rem; cursor: pointer; margin-top: 10px; }
+    button:hover { background-color: #45a049; }
+    .result { font-weight: bold; margin-top: 15px; font-size: 1rem; }
+    .note { font-style: italic; color: #555; margin-bottom: 15px; }
+    hr { margin-top: 20px; margin-bottom: 20px; }
+    /* Media queries for responsive design */
+    @media (max-width: 600px) {
+      body { font-size: 1.2rem; padding: 10px; }
+      button { padding: 12px; font-size: 1rem; }
+      h1, h2 { font-size: 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Vaccine Supply Calculator</h1>
+
+  <!-- Vaccine Selection -->
+  <div class="input-group">
+    <label for="vaccine">Select Vaccine</label>
+    <select id="vaccine" onchange="updateFields()">
+      <option value="">-- Select --</option>
+      <option value="PENTA">PENTA</option>
+      <option value="PCV-13">PCV-13</option>
+      <option value="IPV">IPV</option>
+      <option value="HepB">Hep. B</option>
+      <option value="MR">MR</option>
+      <option value="TD">TD</option>
+      <option value="BCG">BCG</option>
+      <option value="bOPV">bOPV</option>
+    </select>
+  </div>
+
+  <!-- AMC Calculation -->
+  <h2>Average Monthly Consumption (AMC) in Vials</h2>
+  <p class="note">Enter the number of vials used for the past 3 months.</p>
+  <div class="input-group">
+    <label for="month1">Month 1 Usage (Vials)</label>
+    <input type="number" id="month1" placeholder="Enter vials used in month 1">
+  </div>
+  <div class="input-group">
+    <label for="month2">Month 2 Usage (Vials)</label>
+    <input type="number" id="month2" placeholder="Enter vials used in month 2">
+  </div>
+  <div class="input-group">
+    <label for="month3">Month 3 Usage (Vials)</label>
+    <input type="number" id="month3" placeholder="Enter vials used in month 3">
+  </div>
+  <button onclick="calculateAMC()">Calculate AMC</button>
+  <div id="amcResult" class="result"></div>
+
+  <!-- Max/Min Stock Level Calculation -->
+  <hr>
+  <h2>Stock Levels in Vials</h2>
+  <p class="note">Maximum Stock Level = AMC x 2; Minimum Stock Level = AMC x 1.</p>
+  <div id="stockLevels" class="result"></div>
+
+  <!-- Vaccine Quantity Calculation -->
+  <hr>
+  <h2>Vaccine Quantity to Request (Vials)</h2>
+  <p class="note">Formula: (AMC x 2) - Closing Balance.</p>
+  <div class="input-group">
+    <label for="closingBalance">Closing Balance (Vials)</label>
+    <input type="number" id="closingBalance" placeholder="Enter closing balance">
+  </div>
+  <button onclick="calculateVaccineRequest()">Calculate Vaccine Quantity</button>
+  <div id="vaccineResult" class="result"></div>
+
+  <!-- Auto-Disposable Syringes Calculation -->
+  <div id="syringeFields" style="display: none;">
+    <hr>
+    <h2>Auto-Disposable Syringes</h2>
+    <p class="note">Formula: Number of Vials Requested x Dose Preparation per Vial.</p>
+    <div class="input-group">
+      <label for="vialsRequested">Number of Vials Requested</label>
+      <input type="number" id="vialsRequested" placeholder="Enter number of vials requested">
+    </div>
+    <div class="input-group">
+      <label for="dosePerVial">Dose Preparation per Vial</label>
+      <input type="number" id="dosePerVial" placeholder="Enter dose preparation per vial">
+    </div>
+    <button onclick="calculateSyringes()">Calculate Syringe Quantity</button>
+    <div id="syringeResult" class="result"></div>
+  </div>
+
+  <!-- Mixing Syringes Calculation -->
+  <div id="mixingSyringeFields" style="display: none;">
+    <hr>
+    <h2>Mixing Syringes</h2>
+    <p class="note">Formula: Number of Vials Requested.</p>
+    <div class="input-group">
+      <label for="mixingVials">Number of Vials Requested</label>
+      <input type="number" id="mixingVials" placeholder="Enter number of vials">
+    </div>
+    <button onclick="calculateMixingSyringes()">Calculate Mixing Syringe Quantity</button>
+    <div id="mixingSyringeResult" class="result"></div>
+  </div>
+
+  <!-- Dropper Calculation (for bOPV) -->
+  <div id="dropperFields" style="display: none;">
+    <hr>
+    <h2>Droppers</h2>
+    <p class="note">Formula: Number of vials requested.</p>
+    <div class="input-group">
+      <label for="dropperVials">Number of Vials Requested</label>
+      <input type="number" id="dropperVials" placeholder="Enter number of vials">
+    </div>
+    <button onclick="calculateDroppers()">Calculate Dropper Quantity</button>
+    <div id="dropperResult" class="result"></div>
+  </div>
+
+  <!-- Diluents Calculation for BCG and MR -->
+  <div id="diluentFields" style="display: none;">
+    <hr>
+    <h2>Diluents</h2>
+    <p class="note">Formula: Number of Vials Requested (1 vial per vaccine)</p>
+    <div class="input-group">
+      <label for="diluentVials">Number of Vials Requested</label>
+      <input type="number" id="diluentVials" placeholder="Enter number of vials">
+    </div>
+    <button onclick="calculateDiluents()">Calculate Diluents Quantity</button>
+    <div id="diluentResult" class="result"></div>
+  </div>
+
+  <!-- Safety Box Calculation (always at the bottom) -->
+  <div id="safetyBoxFields">
+    <hr>
+    <h2>Safety Boxes</h2>
+    <p class="note">Formula: (Total syringes requested / 100) (rounded up).</p>
+    <button onclick="calculateSafetyBoxes()">Calculate Safety Boxes Quantity</button>
+    <div id="safetyBoxResult" class="result"></div>
+  </div>
+
+</div>
+
+<script>
+  // Syringe dosage per vial for each vaccine type
+  let dosePerVial = { "PENTA": 0.5, "PCV-13": 0.5, "IPV": 0.5, "HepB": 0.5, "MR": 0.5, "TD": 0.5, "BCG": 0.05, "bOPV": 0.05 };
+
+  function updateFields() {
+    let vaccine = document.getElementById('vaccine').value;
+
+    // Reset visibility of all fields
+    document.getElementById('syringeFields').style.display = 'none';
+    document.getElementById('mixingSyringeFields').style.display = 'none';
+    document.getElementById('dropperFields').style.display = 'none';
+    document.getElementById('diluentFields').style.display = 'none';
+
+    // Update the placeholder for vials based on the selected vaccine
+    if (vaccine) {
+      document.getElementById('dosePerVial').value = dosePerVial[vaccine];
+
+      if (vaccine === "MR" || vaccine === "BCG") {
+        document.getElementById('diluentFields').style.display = 'block'; // Show diluent fields
+      } else {
+        document.getElementById('syringeFields').style.display = 'block'; // Show syringes fields
+      }
+
+      if (vaccine === "PENTA" || vaccine === "PCV-13" || vaccine === "IPV" || vaccine === "HepB" || vaccine === "TD" || vaccine === "bOPV") {
+        document.getElementById('mixingSyringeFields').style.display = 'block'; // Show mixing syringes fields
+      }
+    }
+  }
+
+  function calculateAMC() {
+    let month1 = parseFloat(document.getElementById('month1').value) || 0;
+    let month2 = parseFloat(document.getElementById('month2').value) || 0;
+    let month3 = parseFloat(document.getElementById('month3').value) || 0;
+    let amc = Math.round((month1 + month2 + month3) / 3); // Round to nearest whole number
+    document.getElementById('amcResult').innerText = `AMC: ${amc} vials per month`;
+    calculateStockLevels(amc);
+  }
+
+  function calculateStockLevels(amc) {
+    let maxStock = Math.round(amc * 2); // Round to nearest whole number
+    let minStock = Math.round(amc * 1); // Round to nearest whole number
+    document.getElementById('stockLevels').innerText = `Max Stock Level: ${maxStock} vials\nMin Stock Level: ${minStock} vials`;
+  }
+
+  function calculateVaccineRequest() {
+    let closingBalance = parseFloat(document.getElementById('closingBalance').value) || 0;
+    let amc = Math.round((parseFloat(document.getElementById('month1').value) + parseFloat(document.getElementById('month2').value) + parseFloat(document.getElementById('month3').value)) / 3); 
+    let stockRequest = Math.round((amc * 2) - closingBalance); // Round to nearest whole number
+    document.getElementById('vaccineResult').innerText = `Vaccine Quantity to Request: ${stockRequest} vials`;
+  }
+
+  function calculateSyringes() {
+    let vialsRequested = parseFloat(document.getElementById('vialsRequested').value) || 0;
+    let dosePerVialValue = parseFloat(document.getElementById('dosePerVial').value) || 0;
+    let syringes = Math.round(vialsRequested * dosePerVialValue); // Round to nearest whole number
+    document.getElementById('syringeResult').innerText = `Auto-Disposable Syringes: ${syringes} syringes`;
+  }
+
+  function calculateMixingSyringes() {
+    let vials = parseFloat(document.getElementById('mixingVials').value) || 0;
+    document.getElementById('mixingSyringeResult').innerText = `Mixing Syringes: ${Math.round(vials)} syringes`; // Round to nearest whole number
+  }
+
+  function calculateSafetyBoxes() {
+    let syringes = Math.round(parseFloat(document.getElementById('vialsRequested').value) * parseFloat(document.getElementById('dosePerVial').value)); 
+    let mixingSyringes = Math.round(parseFloat(document.getElementById('mixingVials').value)); // Mixing syringes
+    let totalSyringes = syringes + mixingSyringes; // Total syringes
+    let safetyBoxes = Math.ceil(totalSyringes / 100); // Round up to nearest whole number
+    document.getElementById('safetyBoxResult').innerText = `Safety Boxes: ${safetyBoxes} boxes`;
+  }
+
+  function calculateDroppers() {
+    let vials = parseFloat(document.getElementById('dropperVials').value) || 0;
+    document.getElementById('dropperResult').innerText = `Droppers: ${Math.round(vials)} droppers`; // Round to nearest whole number
+  }
+
+  function calculateDiluents() {
+    let vials = parseFloat(document.getElementById('diluentVials').value) || 0;
+    document.getElementById('diluentResult').innerText = `Diluents: ${Math.round(vials)} vials`; // Round to nearest whole number
+  }
+</script>
+
+</body>
+</html>
